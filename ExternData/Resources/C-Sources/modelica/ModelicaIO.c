@@ -1,6 +1,6 @@
 /* ModelicaIO.c - Array I/O functions
 
-   Copyright (C) 2016-2017, Modelica Association and ESI ITI GmbH
+   Copyright (C) 2016-2018, Modelica Association and ESI ITI GmbH
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,10 @@
       Modelica.Utilities.Streams.writeRealMatrix
 
    Release Notes:
+      Jan. 15, 2018: by Thomas Beutlich, ESI ITI GmbH
+                     Added support to ignore UTF-8 BOM if reading text file
+                     (ticket #2404)
+
       Apr. 12, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Improved error messages if reading struct arrays from
                      MATLAB MAT-file fails (ticket #2105)
@@ -47,7 +51,7 @@
 
       Jan. 31, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Added diagnostic message for (supported) partial read of table
-                     from ASCII text file (ticket #2151)
+                     from a text file (ticket #2151)
 
       Jan. 07, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Replaced strtok by re-entrant string tokenize function
@@ -106,9 +110,9 @@ double* ModelicaIO_readRealTable(_In_z_ const char* fileName,
 #if !defined(NO_LOCALE)
 #include <locale.h>
 #endif
-#include "ModelicaMatIO.h"
+#include "ModelicaMatIO.c"
 
-/* The standard way to detect posix is to check _POSIX_VERSION,
+/* The standard way to detect POSIX is to check _POSIX_VERSION,
  * which is defined in <unistd.h>
  */
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE_CC__)
@@ -156,13 +160,13 @@ static void readRealMatIO(_In_z_ const char* fileName, _In_z_ const char* matrix
 
 static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tableName,
                             _Out_ size_t* m, _Out_ size_t* n) MODELICA_NONNULLATTR;
-  /* Read a table from an ASCII text file
+  /* Read a table from a text file
 
      <- RETURN: Pointer to array (row-wise storage) of table values
   */
 
 static int readLine(_In_ char** buf, _In_ int* bufLen, _In_ FILE* fp) MODELICA_NONNULLATTR;
-  /* Read line (of unknown and arbitrary length) from an ASCII text file */
+  /* Read line (of unknown and arbitrary length) from a text file */
 
 static int IsNumber(char* token);
   /*  Check, whether a token represents a floating-point number */
@@ -340,7 +344,7 @@ double* ModelicaIO_readRealTable(_In_z_ const char* fileName,
     const char* ext;
     int isMatExt = 0;
 
-    /* Table file can be either ASCII text or binary MATLAB MAT-file */
+    /* Table file can be either text or binary MATLAB MAT-file */
     ext = strrchr(fileName, '.');
     if (NULL != ext) {
         if (0 == strncmp(ext, ".mat", 4) ||
@@ -362,6 +366,10 @@ double* ModelicaIO_readRealTable(_In_z_ const char* fileName,
         table = readTxtTable(fileName, tableName, m, n);
     }
     return table;
+}
+
+void ModelicaIO_freeRealTable(double* table) {
+    free(table);
 }
 
 static double* readMatTable(_In_z_ const char* fileName, _In_z_ const char* tableName,
@@ -434,20 +442,20 @@ static void readMatIO(_In_z_ const char* fileName,
     char* prevToken;
     int err = 0;
 
-    matrixNameCopy = (char*)malloc((strlen(matrixName) + 1)*sizeof(char));
+    mat = Mat_Open(fileName, (int)MAT_ACC_RDONLY);
+    if (NULL == mat) {
+        ModelicaFormatError("Not possible to open file \"%s\": "
+            "No such file or directory\n", fileName);
+        return;
+    }
+
+    matrixNameCopy = (char*)malloc((strlen(matrixName) + 1) * sizeof(char));
     if (NULL != matrixNameCopy) {
         strcpy(matrixNameCopy, matrixName);
     }
     else {
+        (void)Mat_Close(mat);
         ModelicaError("Memory allocation error\n");
-        return;
-    }
-
-    mat = Mat_Open(fileName, (int)MAT_ACC_RDONLY);
-    if (NULL == mat) {
-        free(matrixNameCopy);
-        ModelicaFormatError("Not possible to open file \"%s\": "
-            "No such file or directory\n", fileName);
         return;
     }
 
@@ -641,6 +649,7 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
 #define DELIM_TABLE_NUMBER " \t,;\r"
     double* table = NULL;
     char* buf;
+    char* header;
     int bufLen = LINE_BUFFER_LENGTH;
     FILE* fp;
     int foundTable = 0;
@@ -648,6 +657,8 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
     unsigned long nRow = 0;
     unsigned long nCol = 0;
     unsigned long lineNo = 1;
+    const unsigned char txtHeader[2] = { 0x23,0x31 };
+    const unsigned char bomHeader[3] = { 0xef,0xbb,0xbf };
 #if defined(NO_LOCALE)
     const char * const dec = ".";
 #elif defined(_MSC_VER) && _MSC_VER >= 1400
@@ -665,7 +676,7 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
         return NULL;
     }
 
-    buf = (char*)malloc(LINE_BUFFER_LENGTH*sizeof(char));
+    buf = (char*)calloc(LINE_BUFFER_LENGTH, sizeof(char));
     if (NULL == buf) {
         fclose(fp);
         ModelicaError("Memory allocation error\n");
@@ -684,9 +695,16 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
         return NULL;
     }
 
+    header = buf;
+    /* Ignore optional UTF-8 BOM */
+    if (0 == memcmp(buf, bomHeader, sizeof(bomHeader)))
+    {
+        header += sizeof(bomHeader);
+    }
+
     /* Expected file header format: "#1" */
-    if (0 != strncmp(buf, "#1", 2)) {
-        size_t len = strlen(buf);
+    if (0 != memcmp(header, txtHeader, sizeof(txtHeader))) {
+        size_t len = strlen(header);
         fclose(fp);
         if (len == 0) {
             free(buf);
@@ -695,7 +713,7 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
                 "line of file \"%s\": \"#1\" expected.\n", fileName);
         }
         else if (len == 1) {
-            char c0 = buf[0];
+            char c0 = header[0];
             free(buf);
             ModelicaFormatError(
                 "Error reading format and version information in first "
@@ -703,8 +721,8 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
                 fileName, c0);
         }
         else {
-            char c0 = buf[0];
-            char c1 = buf[1];
+            char c0 = header[0];
+            char c1 = header[1];
             free(buf);
             ModelicaFormatError(
                 "Error reading format and version information in first "

@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* Programmer:  Robb Matzke <matzke@llnl.gov>
@@ -37,7 +35,7 @@
 
 /* PRIVATE PROTOTYPES */
 static void *H5O_layout_decode(H5F_t *f, hid_t dxpl_id, H5O_t *open_oh,
-    unsigned mesg_flags, unsigned *ioflags, const uint8_t *p);
+    unsigned mesg_flags, unsigned *ioflags, size_t p_size, const uint8_t *p);
 static herr_t H5O_layout_encode(H5F_t *f, hbool_t disable_shared, uint8_t *p, const void *_mesg);
 static void *H5O_layout_copy(const void *_mesg, void *_dest);
 static size_t H5O_layout_size(const H5F_t *f, hbool_t disable_shared, const void *_mesg);
@@ -97,7 +95,8 @@ H5FL_DEFINE(H5O_layout_t);
  */
 static void *
 H5O_layout_decode(H5F_t *f, hid_t H5_ATTR_UNUSED dxpl_id, H5O_t H5_ATTR_UNUSED *open_oh,
-    unsigned H5_ATTR_UNUSED mesg_flags, unsigned H5_ATTR_UNUSED *ioflags, const uint8_t *p)
+    unsigned H5_ATTR_UNUSED mesg_flags, unsigned H5_ATTR_UNUSED *ioflags,
+    size_t H5_ATTR_UNUSED p_size, const uint8_t *p)
 {
     H5O_layout_t           *mesg = NULL;
     unsigned               u;
@@ -594,6 +593,7 @@ H5O_layout_copy_file(H5F_t *file_src, void *mesg_src, H5F_t *file_dst,
     H5O_layout_t       *layout_src = (H5O_layout_t *) mesg_src;
     H5O_layout_t       *layout_dst = NULL;
     hbool_t             copied = FALSE;                         /* Whether the data was copied */
+    H5D_shared_t *shared_fo = (H5D_shared_t *)cpy_info->shared_fo;
     void               *ret_value;                              /* Return value */
 
     FUNC_ENTER_NOAPI_NOINIT
@@ -630,7 +630,9 @@ H5O_layout_copy_file(H5F_t *file_src, void *mesg_src, H5F_t *file_dst,
                 layout_dst->storage.u.contig.size = H5S_extent_nelem(udata->src_space_extent) *
                                         H5T_get_size(udata->src_dtype);
 
-            if(H5D__contig_is_space_alloc(&layout_src->storage)) {
+            if(H5D__contig_is_space_alloc(&layout_src->storage) ||
+               (H5F_HAS_FEATURE(file_src, H5FD_FEAT_DATA_SIEVE) &&
+                shared_fo && shared_fo->cache.contig.sieve_buf)) {
                 /* copy contiguous raw data */
                 if(H5D__contig_copy(file_src, &layout_src->storage.u.contig, file_dst, &layout_dst->storage.u.contig, udata->src_dtype, cpy_info, dxpl_id) < 0)
                     HGOTO_ERROR(H5E_OHDR, H5E_CANTCOPY, NULL, "unable to copy contiguous storage")
@@ -639,7 +641,8 @@ H5O_layout_copy_file(H5F_t *file_src, void *mesg_src, H5F_t *file_dst,
             break;
 
         case H5D_CHUNKED:
-            if(H5D__chunk_is_space_alloc(&layout_src->storage)) {
+            if(H5D__chunk_is_space_alloc(&layout_src->storage) ||
+               (shared_fo && H5D__chunk_is_space_alloc(&shared_fo->layout.storage))) {
                 /* Create chunked layout */
                 if(H5D__chunk_copy(file_src, &layout_src->storage.u.chunk, &layout_src->u.chunk, file_dst, &layout_dst->storage.u.chunk, udata->src_space_extent, udata->src_dtype, udata->common.src_pline, cpy_info, dxpl_id) < 0)
                     HGOTO_ERROR(H5E_OHDR, H5E_CANTCOPY, NULL, "unable to copy chunked storage")

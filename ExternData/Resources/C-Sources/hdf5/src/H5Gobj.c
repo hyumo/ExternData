@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*-------------------------------------------------------------------------
@@ -228,7 +226,7 @@ H5G__obj_create_real(H5F_t *f, hid_t dxpl_id, const H5O_ginfo_t *ginfo,
         size_t pline_size = 0;              /* Size of the pipeline message */
         size_t link_size;                   /* Size of a link message */
 
-        /* Calculate message size infomation, for creating group's object header */
+        /* Calculate message size information, for creating group's object header */
         linfo_size = H5O_msg_size_f(f, gcpl_id, H5O_LINFO_ID, linfo, (size_t)0);
         HDassert(linfo_size);
 

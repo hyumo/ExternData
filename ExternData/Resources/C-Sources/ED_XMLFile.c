@@ -1,6 +1,6 @@
 /* ED_XMLFile.c - XML functions
  *
- * Copyright (C) 2015-2017, tbeu
+ * Copyright (C) 2015-2018, tbeu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 #define strdup _strdup
 #endif
 #include "ED_locale.h"
+#include "ED_ptrtrack.h"
 #include "bsxml.h"
 #include "ModelicaUtilities.h"
 #include "../Include/ED_XMLFile.h"
@@ -95,12 +96,14 @@ void* ED_createXML(const char* fileName, int verbose)
 		return NULL;
 	}
 	xml->loc = ED_INIT_LOCALE;
+	ED_PTR_ADD(xml);
 	return xml;
 }
 
 void ED_destroyXML(void* _xml)
 {
 	XMLFile* xml = (XMLFile*)_xml;
+	ED_PTR_CHECK(xml);
 	if (xml != NULL) {
 		if (xml->fileName != NULL) {
 			free(xml->fileName);
@@ -108,42 +111,42 @@ void ED_destroyXML(void* _xml)
 		XmlNode_deleteTree(xml->root);
 		ED_FREE_LOCALE(xml->loc);
 		free(xml);
+		ED_PTR_DEL(xml);
 	}
 }
 
-static char* findValue(XmlNodeRef* root, const char* varName, const char* fileName)
+static char* findValue(XmlNodeRef* root, XmlNodeRef* parent, const char* varName, const char* fileName)
 {
 	char* token = NULL;
-	char* buf = strdup(varName);
-	if (buf != NULL) {
+	char* varNameCopy = strdup(varName);
+	if (varNameCopy != NULL) {
 		int elementError = 0;
 		char* nextToken = NULL;
-		token = strtok_r(buf, ".", &nextToken);
+		token = strtok_r(varNameCopy, ".", &nextToken);
 		if (token == NULL) {
 			elementError = 1;
 		}
 		while (token != NULL && elementError == 0) {
-			size_t i;
-			int foundToken = 0;
-			for (i = 0; i < XmlNode_getChildCount(*root); i++) {
-				XmlNodeRef child = XmlNode_getChild(*root, i);
-				if (XmlNode_isTag(child, token)) {
-					*root = child;
-					token = strtok_r(NULL, ".", &nextToken);
-					foundToken = 1;
-					break;
-				}
+			XmlNodeRef iter = XmlNode_findChild(*root, token);
+			if (NULL != iter) {
+				*parent = *root;
+				*root = iter;
+				token = strtok_r(NULL, ".", &nextToken);
 			}
-			if (foundToken == 0) {
+			else {
 				elementError = 1;
 			}
 		}
-		free(buf);
-		if (elementError == 1) {
-			ModelicaFormatError("Error in line %i: Cannot find element \"%s\" in file \"%s\"\n",
-				XmlNode_getLine(*root), varName, fileName);
+		free(varNameCopy);
+		if (0 == elementError) {
+			XmlNode_getValue(*root, &token);
 		}
-		XmlNode_getValue(*root, &token);
+		else {
+			ModelicaFormatMessage("Error in line %i: Cannot find element \"%s\" in file \"%s\"\n",
+				XmlNode_getLine(*root), varName, fileName);
+			*root = NULL;
+			token = NULL;
+		}
 	}
 	else {
 		ModelicaError("Memory allocation error\n");
@@ -151,63 +154,93 @@ static char* findValue(XmlNodeRef* root, const char* varName, const char* fileNa
 	return token;
 }
 
-double ED_getDoubleFromXML(void* _xml, const char* varName)
+double ED_getDoubleFromXML(void* _xml, const char* varName, int* exist)
 {
 	double ret = 0.;
 	XMLFile* xml = (XMLFile*)_xml;
+	ED_PTR_CHECK(xml);
 	if (xml != NULL) {
 		XmlNodeRef root = xml->root;
-		char* token = findValue(&root, varName, xml->fileName);
+		XmlNodeRef parent = NULL;
+		char* token = findValue(&root, &parent, varName, xml->fileName);
+		*exist = 1;
 		if (token != NULL) {
-			if (ED_strtod(token, xml->loc, &ret)) {
+			if (ED_strtod(token, xml->loc, &ret, ED_STRICT)) {
 				ModelicaFormatError("Error in line %i: Cannot read double value \"%s\" from file \"%s\"\n",
 					XmlNode_getLine(root), token, xml->fileName);
 			}
 		}
-		else {
-			ModelicaFormatError("Error in line %i: Cannot read double value from file \"%s\"\n",
+		else if (NULL != root) {
+			ModelicaFormatMessage("Error in line %i: Cannot read double value from file \"%s\"\n",
 				XmlNode_getLine(root), xml->fileName);
+			*exist = 0;
 		}
+		else {
+			*exist = 0;
+		}
+	}
+	else {
+		*exist = 0;
 	}
 	return ret;
 }
 
-const char* ED_getStringFromXML(void* _xml, const char* varName)
+const char* ED_getStringFromXML(void* _xml, const char* varName, int* exist)
 {
 	XMLFile* xml = (XMLFile*)_xml;
+	ED_PTR_CHECK(xml);
 	if (xml != NULL) {
 		XmlNodeRef root = xml->root;
-		char* token = findValue(&root, varName, xml->fileName);
+		XmlNodeRef parent = NULL;
+		char* token = findValue(&root, &parent, varName, xml->fileName);
+		*exist = 1;
 		if (token != NULL) {
 			char* ret = ModelicaAllocateString(strlen(token));
 			strcpy(ret, token);
 			return (const char*)ret;
 		}
-		else {
-			ModelicaFormatError("Error in line %i: Cannot read value from file \"%s\"\n",
+		else if (NULL != root) {
+			ModelicaFormatMessage("Error in line %i: Cannot read value from file \"%s\"\n",
 				XmlNode_getLine(root), xml->fileName);
+			*exist = 0;
 		}
+		else {
+			*exist = 0;
+		}
+	}
+	else {
+		*exist = 0;
 	}
 	return "";
 }
 
-int ED_getIntFromXML(void* _xml, const char* varName)
+int ED_getIntFromXML(void* _xml, const char* varName, int* exist)
 {
 	long ret = 0;
 	XMLFile* xml = (XMLFile*)_xml;
+	ED_PTR_CHECK(xml);
 	if (xml != NULL) {
 		XmlNodeRef root = xml->root;
-		char* token = findValue(&root, varName, xml->fileName);
+		XmlNodeRef parent = NULL;
+		char* token = findValue(&root, &parent, varName, xml->fileName);
+		*exist = 1;
 		if (token != NULL) {
-			if (ED_strtol(token, xml->loc, &ret)) {
+			if (ED_strtol(token, xml->loc, &ret, ED_STRICT)) {
 				ModelicaFormatError("Error in line %i: Cannot read int value \"%s\" from file \"%s\"\n",
 					XmlNode_getLine(root), token, xml->fileName);
 			}
 		}
-		else {
-			ModelicaFormatError("Error in line %i: Cannot read int value from file \"%s\"\n",
+		else if (NULL != root) {
+			ModelicaFormatMessage("Error in line %i: Cannot read int value from file \"%s\"\n",
 				XmlNode_getLine(root), xml->fileName);
+			*exist = 0;
 		}
+		else {
+			*exist = 0;
+		}
+	}
+	else {
+		*exist = 0;
 	}
 	return (int)ret;
 }
@@ -215,31 +248,32 @@ int ED_getIntFromXML(void* _xml, const char* varName)
 void ED_getDoubleArray1DFromXML(void* _xml, const char* varName, double* a, size_t n)
 {
 	XMLFile* xml = (XMLFile*)_xml;
+	ED_PTR_CHECK(xml);
 	if (xml != NULL) {
 		XmlNodeRef root = xml->root;
+		XmlNodeRef parent = NULL;
 		int iLevel = 0;
-		char* token = findValue(&root, varName, xml->fileName);
-		while (token == NULL && XmlNode_getChildCount(root) > 0) {
+		char* token = findValue(&root, &parent, varName, xml->fileName);
+		while (NULL == token && NULL != root && XmlNode_getChildCount(root) > 0) {
 			/* Try children if root is empty */
 			root = XmlNode_getChild(root, 0);
 			XmlNode_getValue(root, &token);
 			iLevel++;
 		}
 		if (token != NULL) {
-			char* buf = strdup(token);
-			if (buf != NULL) {
+			char* tokenCopy = strdup(token);
+			if (tokenCopy != NULL) {
 				size_t i = 0;
 				size_t iSibling = 0;
-				XmlNodeRef parent = XmlNode_getParent(root);
 				size_t nSiblings = XmlNode_getChildCount(parent);
 				int line = XmlNode_getLine(root);
 				int foundSibling = 0;
 				char* nextToken = NULL;
-				token = strtok_r(buf, "[]{},; \t", &nextToken);
+				token = strtok_r(tokenCopy, "[]{},; \t", &nextToken);
 				while (i < n) {
 					if (token != NULL) {
-						if (ED_strtod(token, xml->loc, &a[i++])) {
-							free(buf);
+						if (ED_strtod(token, xml->loc, &a[i++], ED_STRICT)) {
+							free(tokenCopy);
 							ModelicaFormatError("Error in line %i: Cannot read double value \"%s\" from file \"%s\"\n",
 								line, token, xml->fileName);
 							return;
@@ -253,12 +287,12 @@ void ED_getDoubleArray1DFromXML(void* _xml, const char* varName, double* a, size
 							foundSibling = 1;
 							XmlNode_getValue(child, &token);
 							line = XmlNode_getLine(child);
-							free(buf);
+							free(tokenCopy);
 							if (token != NULL) {
-								buf = strdup(token);
-								if (buf != NULL) {
-									char* nextToken = NULL;
-									token = strtok_r(buf, "[]{},; \t", &nextToken);
+								tokenCopy = strdup(token);
+								if (tokenCopy != NULL) {
+									nextToken = NULL;
+									token = strtok_r(tokenCopy, "[]{},; \t", &nextToken);
 								}
 								else {
 									ModelicaError("Memory allocation error\n");
@@ -274,7 +308,7 @@ void ED_getDoubleArray1DFromXML(void* _xml, const char* varName, double* a, size
 					}
 					else {
 						/* Error: token is NULL and no (more) siblings */
-						free(buf);
+						free(tokenCopy);
 						if (foundSibling != 0) {
 							const char* levels[] = {"", "child ", "grandchild ", "great-grandchild ", "great-great-grandchild "};
 							XmlNodeRef child = XmlNode_getChild(parent, nSiblings - 1);
@@ -292,13 +326,13 @@ void ED_getDoubleArray1DFromXML(void* _xml, const char* varName, double* a, size
 						return;
 					}
 				}
-				free(buf);
+				free(tokenCopy);
 			}
 			else {
 				ModelicaError("Memory allocation error\n");
 			}
 		}
-		else {
+		else if (NULL != root) {
 			ModelicaFormatError("Error in line %i: Cannot read empty element \"%s\" in file \"%s\"\n",
 				XmlNode_getLine(root), varName, xml->fileName);
 		}
@@ -308,4 +342,108 @@ void ED_getDoubleArray1DFromXML(void* _xml, const char* varName, double* a, size
 void ED_getDoubleArray2DFromXML(void* _xml, const char* varName, double* a, size_t m, size_t n)
 {
 	ED_getDoubleArray1DFromXML(_xml, varName, a, m*n);
+}
+
+void ED_getArray1DDimensionFromXML(void* _xml, const char* varName, int* n)
+{
+	int m;
+	ED_getArray2DDimensionsFromXML(_xml, varName, &m, n);
+	*n *= m;
+}
+
+void ED_getArray2DDimensionsFromXML(void* _xml, const char* varName, int* m, int* n)
+{
+	XMLFile* xml = (XMLFile*)_xml;
+	int _m = 0;
+	int _n = 0;
+	if (NULL != m)
+		*m = 0;
+	if (NULL != n)
+		*n = 0;
+	ED_PTR_CHECK(xml);
+	if (xml != NULL) {
+		XmlNodeRef root = xml->root;
+		XmlNodeRef parent = NULL;
+		int iLevel = 0;
+		char* token = findValue(&root, &parent, varName, xml->fileName);
+		while (NULL == token && NULL != root && XmlNode_getChildCount(root) > 0) {
+			/* Try children if root is empty */
+			root = XmlNode_getChild(root, 0);
+			XmlNode_getValue(root, &token);
+			iLevel++;
+		}
+		if (NULL != token) {
+			char* tokenCopy = strdup(token);
+			if (NULL != tokenCopy) {
+				size_t nSiblings = XmlNode_getChildCount(parent);
+				char* nextToken = NULL;
+				if (0 == iLevel) {
+					char* sep = strchr(tokenCopy, ';');
+					_m = 1;
+					if (NULL != sep) {
+						do {
+							_m++;
+							sep = strchr(sep + 1, ';');
+						} while (NULL != sep);
+					}
+					else {
+						sep = strchr(tokenCopy, '}');
+						while (NULL != sep) {
+							sep = strchr(sep + 1, ',');
+							if (NULL != sep) {
+								_m++;
+								sep = strchr(sep + 1, '}');
+							}
+						}
+					}
+					token = strtok_r(tokenCopy, "[]{},; \t", &nextToken);
+					if (NULL != token) {
+						do {
+							_n++;
+							token = strtok_r(NULL, "[]{},; \t", &nextToken);
+						} while (NULL != token);
+						if (0 == _n%_m) {
+							_n /= _m;
+						}
+						else {
+							_m = 1;
+						}
+					}
+					free(tokenCopy);
+				}
+				else {
+					size_t iSibling;
+					free(tokenCopy);
+					for (iSibling = 0; iSibling < nSiblings; iSibling++) {
+						XmlNodeRef child = XmlNode_getChild(parent, iSibling);
+						if (XmlNode_isTag(child, XmlNode_getTag(root))) {
+							XmlNode_getValue(child, &token);
+							if (NULL != token) {
+								tokenCopy = strdup(token);
+								if (NULL != tokenCopy) {
+									token = strtok_r(tokenCopy, "[]{},; \t", &nextToken);
+									while (NULL != token) {
+										_n++;
+										token = strtok_r(NULL, "[]{},; \t", &nextToken);
+									}
+									free(tokenCopy);
+								}
+							}
+						}
+					}
+					_m = (int)nSiblings;
+					if (0 == _n%_m) {
+						_n /= _m;
+					}
+					else {
+						_m = 1;
+					}
+				}
+			}
+		}
+	}
+	if (NULL != m)
+		*m = _m;
+	if (NULL != n)
+		*n = _n;
 }

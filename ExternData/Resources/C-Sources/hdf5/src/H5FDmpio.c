@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -1485,7 +1483,7 @@ H5FD_mpio_read(H5FD_t *_file, H5FD_mem_t H5_ATTR_UNUSED type, hid_t dxpl_id, had
 
     /* Only look for MPI views for raw data transfers */
     if(type==H5FD_MEM_DRAW) {
-        H5FD_mpio_xfer_t            xfer_mode;   /* I/O tranfer mode */
+        H5FD_mpio_xfer_t            xfer_mode;   /* I/O transfer mode */
 
         /* Obtain the data transfer properties */
         if(NULL == (plist = (H5P_genplist_t *)H5I_object(dxpl_id)))
@@ -1771,7 +1769,7 @@ H5FD_mpio_write(H5FD_t *_file, H5FD_mem_t type, hid_t dxpl_id, haddr_t addr,
 #endif
 
     if(type == H5FD_MEM_DRAW) {
-        H5FD_mpio_xfer_t            xfer_mode;   /* I/O tranfer mode */
+        H5FD_mpio_xfer_t            xfer_mode;   /* I/O transfer mode */
 
         /* Obtain the data transfer properties */
         if(NULL == (plist = (H5P_genplist_t *)H5I_object(dxpl_id)))

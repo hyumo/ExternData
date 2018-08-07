@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -114,6 +112,8 @@ H5_DLL H5T_class_t H5T_get_class(const H5T_t *dt, htri_t internal);
 H5_DLL htri_t H5T_detect_class(const H5T_t *dt, H5T_class_t cls, hbool_t from_api);
 H5_DLL size_t H5T_get_size(const H5T_t *dt);
 H5_DLL int    H5T_cmp(const H5T_t *dt1, const H5T_t *dt2, hbool_t superset);
+H5_DLL herr_t H5T_encode(H5T_t *obj, unsigned char *buf, size_t *nalloc);
+H5_DLL H5T_t *H5T_decode(size_t buf_size, const unsigned char *buf);
 H5_DLL herr_t H5T_debug(const H5T_t *dt, FILE * stream);
 H5_DLL struct H5O_loc_t *H5T_oloc(H5T_t *dt);
 H5_DLL H5G_name_t *H5T_nameof(H5T_t *dt);

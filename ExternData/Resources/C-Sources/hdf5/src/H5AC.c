@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*-------------------------------------------------------------------------
@@ -439,7 +437,7 @@ H5AC_create(const H5F_t *f,
             HGOTO_ERROR(H5E_VFL, H5E_CANTGET, FAIL, "can't get mpi size")
 
         if(NULL == (aux_ptr = H5FL_CALLOC(H5AC_aux_t)))
-            HGOTO_ERROR(H5E_CACHE, H5E_CANTALLOC, FAIL, "Can't allocate H5AC auxilary structure.")
+            HGOTO_ERROR(H5E_CACHE, H5E_CANTALLOC, FAIL, "Can't allocate H5AC auxiliary structure.")
 
         aux_ptr->magic = H5AC__H5AC_AUX_T_MAGIC;
         aux_ptr->mpi_comm = mpi_comm;
@@ -547,7 +545,7 @@ H5AC_create(const H5F_t *f,
 
 done:
 #ifdef H5_HAVE_PARALLEL
-    /* if there is a failure, try to tidy up the auxilary structure */
+    /* if there is a failure, try to tidy up the auxiliary structure */
     if(ret_value < 0) {
         if(aux_ptr != NULL) {
             if(aux_ptr->d_slist_ptr != NULL)
@@ -1421,7 +1419,7 @@ done:
  *		from the cache, clear it, and free it without writing it to
  *		disk.
  *
- *		This verion of the function is a complete re-write to
+ *		This version of the function is a complete re-write to
  *		use the new metadata cache.  While there isn't all that
  *		much difference between the old and new Purpose sections,
  *		the original version is given below.

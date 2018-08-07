@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -823,11 +821,28 @@ H5S_point_serialize (const H5S_t *space, uint8_t *buf)
     H5S_pnt_node_t *curr;   /* Point information nodes */
     uint8_t *lenp;          /* pointer to length location for later storage */
     uint32_t len=0;         /* number of bytes used */
-    unsigned u;                /* local counting variable */
+    unsigned u;                 /* local counting variable */
+    hsize_t bounds_start[H5S_MAX_RANK]; /* Selection bounding box */
+    hsize_t bounds_end[H5S_MAX_RANK];   /* Selection bounding box */
+    herr_t ret_value = SUCCEED; /* Return value */
 
-    FUNC_ENTER_NOAPI_NOINIT_NOERR
+    FUNC_ENTER_NOAPI_NOINIT
 
     HDassert(space);
+
+     /* Get bounding box for the selection */
+    HDmemset(bounds_end, 0, sizeof(bounds_end));
+    if(H5S_point_bounds(space, bounds_start, bounds_end) < 0)
+        HGOTO_ERROR(H5E_DATASPACE, H5E_CANTGET, FAIL, "can't get selection bounds")
+
+    /* Determine whether the number of points or the high bounds in the selection exceed (2^32 - 1) */
+    if(space->select.num_elem > H5S_UINT32_MAX)
+        HGOTO_ERROR(H5E_DATASPACE, H5E_BADVALUE, FAIL, "invalid number of points in selection")
+    else {
+        for(u = 0; u < space->extent.rank; u++)
+            if(bounds_end[u] > H5S_UINT32_MAX)
+                HGOTO_ERROR(H5E_DATASPACE, H5E_BADVALUE, FAIL, "invalid points selection")
+    }
 
     /* Store the preamble information */
     UINT32ENCODE(buf, (uint32_t)H5S_GET_SELECT_TYPE(space));  /* Store the type of selection */
@@ -860,7 +875,8 @@ H5S_point_serialize (const H5S_t *space, uint8_t *buf)
     /* Encode length */
     UINT32ENCODE(lenp, (uint32_t)len);  /* Store the length of the extra information */
 
-    FUNC_LEAVE_NOAPI(SUCCEED)
+done:
+    FUNC_LEAVE_NOAPI(ret_value)
 }   /* H5S_point_serialize() */
 
 

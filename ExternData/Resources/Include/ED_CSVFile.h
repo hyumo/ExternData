@@ -1,6 +1,6 @@
 /* ED_CSVFile.h - CSV functions header
  *
- * Copyright (C) 2015-2017, tbeu
+ * Copyright (C) 2015-2018, tbeu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,5 +33,6 @@
 void* ED_createCSV(const char* fileName, const char* sep, const char* quote, int verbose);
 void ED_destroyCSV(void* _csv);
 void ED_getDoubleArray2DFromCSV(void* _csv, int* field, double* a, size_t m, size_t n);
+void ED_getArray2DDimensionsFromCSV(void* _csv, int* m, int* n);
 
 #endif

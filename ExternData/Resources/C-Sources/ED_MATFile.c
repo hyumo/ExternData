@@ -1,6 +1,6 @@
 /* ED_MATFile.c - MAT functions
  *
- * Copyright (C) 2015-2017, tbeu
+ * Copyright (C) 2015-2018, tbeu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,12 +24,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if defined(__gnu_linux__)
+#define _GNU_SOURCE 1
+#endif
+
 #include <string.h>
 #include <stdio.h>
 #if defined(_MSC_VER)
 #define strdup _strdup
 #endif
+#include "ED_ptrtrack.h"
 #include "ModelicaUtilities.h"
+#define MODELICA_EXPORT static
+#define MATIO_EXTERN static
 #include "ModelicaIO.c"
 #include "../Include/ED_MATFile.h"
 
@@ -52,32 +59,36 @@ void* ED_createMAT(const char* fileName, int verbose)
 		return NULL;
 	}
 	mat->verbose = verbose;
-
+	ED_PTR_ADD(mat);
 	return mat;
 }
 
 void ED_destroyMAT(void* _mat)
 {
 	MATFile* mat = (MATFile*)_mat;
+	ED_PTR_CHECK(mat);
 	if (mat != NULL) {
 		if (mat->fileName != NULL) {
 			free(mat->fileName);
 		}
 		free(mat);
+		ED_PTR_DEL(mat);
 	}
 }
 
 void ED_getDoubleArray2DFromMAT(void* _mat, const char* varName, double* a, size_t m, size_t n)
 {
 	MATFile* mat = (MATFile*)_mat;
+	ED_PTR_CHECK(mat);
 	if (mat != NULL) {
 		ModelicaIO_readRealMatrix(mat->fileName, varName, a, m, n, mat->verbose);
 	}
 }
 
-void ED_getStringArray1DFromMAT(void* _mat, const char* varName, const char* string[], size_t m)
+void ED_getStringArray1DFromMAT(void* _mat, const char* varName, const char** a, size_t m)
 {
 	MATFile* mat = (MATFile*)_mat;
+	ED_PTR_CHECK(mat);
 	if (mat != NULL) {
 		MatIO matio = {NULL, NULL, NULL};
 
@@ -125,7 +136,7 @@ void ED_getStringArray1DFromMAT(void* _mat, const char* varName, const char* str
 						str[j] = ((char*)matvar->data)[i + j*nRow];
 					}
 					str[nCol] = '\0';
-					string[i] = str;
+					a[i] = str;
 				}
 				else {
 					Mat_VarFree(matio.matvarRoot);
@@ -139,4 +150,26 @@ void ED_getStringArray1DFromMAT(void* _mat, const char* varName, const char* str
 			(void)Mat_Close(matio.mat);
 		}
 	}
+}
+
+void ED_getArray2DDimensionsFromMAT(void* _mat, const char* varName, int* m, int* n)
+{
+	MATFile* mat = (MATFile*)_mat;
+	int _m = 0;
+	int _n = 0;
+	if (NULL != m)
+		*m = 0;
+	if (NULL != n)
+		*n = 0;
+	ED_PTR_CHECK(mat);
+	if (NULL != mat) {
+		int dim[2];
+		ModelicaIO_readMatrixSizes(mat->fileName, varName, dim);
+		_m = dim[0];
+		_n = dim[1];
+	}
+	if (NULL != m)
+		*m = _m;
+	if (NULL != n)
+		*n = _n;
 }

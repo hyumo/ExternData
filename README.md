@@ -1,8 +1,8 @@
 # ExternData
-Free Modelica library for data I/O of CSV, INI, JSON, MATLAB MAT, Excel XLS/XLSX and XML files.
+Free Modelica library for data I/O of CSV, INI, JSON, MATLAB MAT, TIR, Excel XLS/XLSX and XML files.
 
 ## Build status
-[![Build Status](https://travis-ci.org/tbeu/ExternData.svg?branch=master)](https://travis-ci.org/tbeu/ExternData)
+[![Build Status](https://travis-ci.org/modelica-3rdparty/ExternData.svg?branch=master)](https://travis-ci.org/modelica-3rdparty/ExternData)
 [![Build Status](https://ci.appveyor.com/api/projects/status/k77hnpxp99djcong/branch/master?svg=true)](https://ci.appveyor.com/project/tbeu/externdata/branch/master)
 
 ## Library description
@@ -15,6 +15,7 @@ The aim of this library is to provide access from Modelica simulation tools to d
   * [INI](https://en.wikipedia.org/wiki/INI_file)
   * [JSON](https://en.wikipedia.org/wiki/JSON)
   * [MATLAB](https://en.wikipedia.org/wiki/MATLAB) MAT of version v4, v6, v7 and v7.3
+  * TIR
   * [Excel](https://en.wikipedia.org/wiki/Microsoft_Excel) [XLS](https://en.wikipedia.org/wiki/Microsoft_Excel#Binary) and [XLSX](https://en.wikipedia.org/wiki/Microsoft_Excel#XML_Spreadsheet)
   * [XML](https://en.wikipedia.org/wiki/XML)
 * Pure C (and not C++) code for external functions and objects
@@ -56,14 +57,16 @@ Borislav Sapundzhiev's fairly simple XML DOM and JSON implementation
 James Clark's Expat XML parser library
 * [hdf5](https://support.hdfgroup.org/HDF5) -
 The HDF Group's data model, library and file format for storing and managing data
+* [inih](https://github.com/benhoyt/inih) -
+Ben Hoyt's simple INI file parser in C
 * [libxls](http://sourceforge.net/projects/libxls) -
 David Hoerl's C library for parsing Excel files
 * [matio](http://sourceforge.net/projects/matio) -
 Christopher Hulbert's C library for reading and writing MATLAB MAT-files
-* [minIni](https://github.com/compuphase/minIni) -
-Thiadmer Riemersma's small and portable INI file library with read/write support
 * [minizip](http://www.winimage.com/zLibDll/minizip.html) -
 Gilles Vollant's Zip and UnZip library
+* [parson](https://github.com/kgabis/parson) -
+Krzysztof Gabis' lightweight JSON library written in C
 * [uthash](https://github.com/troydhanson/uthash) -
 Troy D. Hanson's C macros for hash tables and more
 * [zlib](https://github.com/madler/zlib) -

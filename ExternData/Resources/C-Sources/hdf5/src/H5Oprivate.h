@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*-------------------------------------------------------------------------
@@ -83,6 +81,9 @@ typedef struct H5O_t H5O_t;
 /* Hash value constants */
 #define H5O_HASH_SIZE 32
 
+/* Enable reading/writing "bogus" messages */
+/* #define H5O_ENABLE_BOGUS */
+
 /* ========= Object Creation properties ============ */
 #define H5O_CRT_ATTR_MAX_COMPACT_NAME	"max compact attr"      /* Max. # of attributes to store compactly */
 #define H5O_CRT_ATTR_MIN_DENSE_NAME	"min dense attr"	/* Min. # of attributes to store densely */
@@ -92,6 +93,11 @@ typedef struct H5O_t H5O_t;
 #ifdef H5O_ENABLE_BOGUS
 #define H5O_BOGUS_MSG_FLAGS_NAME        "bogus msg flags"       /* Flags for 'bogus' message */
 #define H5O_BOGUS_MSG_FLAGS_SIZE        sizeof(uint8_t)
+
+/* bogus ID can be either (a) H5O_BOGUS_VALID_ID or (b) H5O_BOGUS_INVALID_ID */
+#define H5O_BOGUS_MSG_ID_NAME        "bogus msg id"         /* ID for 'bogus' message */
+#define H5O_BOGUS_MSG_ID_SIZE        sizeof(unsigned)
+
 #endif /* H5O_ENABLE_BOGUS */
 #ifdef H5O_ENABLE_BAD_MESG_COUNT
 #define H5O_BAD_MESG_COUNT_NAME         "bad message count"       /* Flag setting bad message count */
@@ -163,37 +169,47 @@ typedef struct H5O_copy_t {
     H5SL_t  *dst_dt_list;               /* Skip list to hold committed datatypes in dest file */
     hbool_t dst_dt_list_complete;       /* Whether the destination datatype list is complete (i.e. not only populated with "suggestions" from H5Padd_merge_committed_dtype_path) */
     H5O_t   *oh_dst;                    /* The destination object header */
+    void    *shared_fo;                 /* The shared pointer for the object */
     H5O_mcdt_search_cb_t mcdt_cb;	/* The callback to invoke before searching the global list of committed datatypes at destination */
     void *mcdt_ud;			/* User data passed to callback */
 } H5O_copy_t;
 
 /* Header message IDs */
-#define H5O_NULL_ID	0x0000          /* Null Message.  */
-#define H5O_SDSPACE_ID	0x0001          /* Dataspace Message. */
-#define H5O_LINFO_ID    0x0002          /* Link info Message. */
-#define H5O_DTYPE_ID	0x0003          /* Datatype Message.  */
-#define H5O_FILL_ID     0x0004          /* Fill Value Message. (Old)  */
-#define H5O_FILL_NEW_ID 0x0005          /* Fill Value Message. (New)  */
-#define H5O_LINK_ID     0x0006          /* Link Message. */
-#define H5O_EFL_ID	0x0007          /* External File List Message  */
-#define H5O_LAYOUT_ID	0x0008          /* Data Layout Message.  */
-#define H5O_BOGUS_ID	0x0009          /* "Bogus" Message.  */
-#define H5O_GINFO_ID	0x000a          /* Group info Message.  */
-#define H5O_PLINE_ID	0x000b          /* Filter pipeline message.  */
-#define H5O_ATTR_ID	0x000c          /* Attribute Message.  */
-#define H5O_NAME_ID	0x000d          /* Object name message.  */
-#define H5O_MTIME_ID	0x000e          /* Modification time message. (Old)  */
-#define H5O_SHMESG_ID   0x000f          /* Shared message "SOHM" table. */
-#define H5O_CONT_ID	0x0010          /* Object header continuation message.  */
-#define H5O_STAB_ID	0x0011          /* Symbol table message.  */
-#define H5O_MTIME_NEW_ID 0x0012         /* Modification time message. (New)  */
-#define H5O_BTREEK_ID   0x0013          /* v1 B-tree 'K' values message.  */
-#define H5O_DRVINFO_ID  0x0014          /* Driver info message.  */
-#define H5O_AINFO_ID    0x0015          /* Attribute info message.  */
-#define H5O_REFCOUNT_ID 0x0016          /* Reference count message.  */
-#define H5O_UNKNOWN_ID  0x0017          /* Placeholder message ID for unknown message.  */
+#define H5O_NULL_ID             0x0000  /* Null Message.  */
+#define H5O_SDSPACE_ID          0x0001  /* Dataspace Message. */
+#define H5O_LINFO_ID            0x0002  /* Link info Message. */
+#define H5O_DTYPE_ID            0x0003  /* Datatype Message.  */
+#define H5O_FILL_ID             0x0004  /* Fill Value Message. (Old)  */
+#define H5O_FILL_NEW_ID         0x0005  /* Fill Value Message. (New)  */
+#define H5O_LINK_ID             0x0006  /* Link Message. */
+#define H5O_EFL_ID              0x0007  /* External File List Message  */
+#define H5O_LAYOUT_ID           0x0008  /* Data Layout Message.  */
+#define H5O_BOGUS_VALID_ID      0x0009  /* "Bogus valid" Message.  */
+#define H5O_GINFO_ID            0x000a  /* Group info Message.  */
+#define H5O_PLINE_ID            0x000b  /* Filter pipeline message.  */
+#define H5O_ATTR_ID             0x000c  /* Attribute Message.  */
+#define H5O_NAME_ID             0x000d  /* Object name message.  */
+#define H5O_MTIME_ID            0x000e  /* Modification time message. (Old)  */
+#define H5O_SHMESG_ID           0x000f  /* Shared message "SOHM" table. */
+#define H5O_CONT_ID             0x0010  /* Object header continuation message.  */
+#define H5O_STAB_ID             0x0011  /* Symbol table message.  */
+#define H5O_MTIME_NEW_ID        0x0012  /* Modification time message. (New)  */
+#define H5O_BTREEK_ID           0x0013  /* v1 B-tree 'K' values message.  */
+#define H5O_DRVINFO_ID          0x0014  /* Driver info message.  */
+#define H5O_AINFO_ID            0x0015  /* Attribute info message.  */
+#define H5O_REFCOUNT_ID         0x0016  /* Reference count message.  */
+#define H5O_UNKNOWN_ID          0x0017  /* Placeholder message ID for unknown message.  */
                                         /* (this should never exist in a file) */
 
+/*
+ * Note: Must increment H5O_MSG_TYPES in H5Opkg.h and update H5O_msg_class_g
+ *      in H5O.c when creating a new message type.  Also bump the value of
+ *      H5O_BOGUS_INVALID_ID, below, to be one greater than the value of
+ *      H5O_UNKNOWN_ID.
+ *
+ * (this should never exist in a file)
+ */
+#define H5O_BOGUS_INVALID_ID    0x0018  /* "Bogus invalid" Message.  */
 
 /* Shared object message types.
  * Shared objects can be committed, in which case the shared message contains
@@ -425,9 +441,6 @@ typedef struct H5O_layout_t {
     H5O_storage_t storage;              /* Information for storing dataset elements */
 } H5O_layout_t;
 
-/* Enable reading/writing "bogus" messages */
-/* #define H5O_ENABLE_BOGUS */
-
 #ifdef H5O_ENABLE_BOGUS
 /*
  * "Bogus" Message.
@@ -641,7 +654,7 @@ H5_DLL herr_t H5O_touch(const H5O_loc_t *loc, hbool_t force, hid_t dxpl_id);
 H5_DLL herr_t H5O_touch_oh(H5F_t *f, hid_t dxpl_id, H5O_t *oh,
     hbool_t force);
 #ifdef H5O_ENABLE_BOGUS
-H5_DLL herr_t H5O_bogus_oh(H5F_t *f, hid_t dxpl_id, H5O_t *oh, unsigned mesg_flags);
+H5_DLL herr_t H5O_bogus_oh(H5F_t *f, hid_t dxpl_id, H5O_t *oh, unsigned mesg_id, unsigned mesg_flags);
 #endif /* H5O_ENABLE_BOGUS */
 H5_DLL herr_t H5O_delete(H5F_t *f, hid_t dxpl_id, haddr_t addr);
 H5_DLL herr_t H5O_get_hdr_info(const H5O_loc_t *oloc, hid_t dxpl_id, H5O_hdr_info_t *hdr);
@@ -697,7 +710,7 @@ H5_DLL herr_t H5O_msg_get_crt_index(unsigned type_id, const void *mesg,
 H5_DLL herr_t H5O_msg_encode(H5F_t *f, unsigned type_id, hbool_t disable_shared,
     unsigned char *buf, const void *obj);
 H5_DLL void* H5O_msg_decode(H5F_t *f, hid_t dxpl_id, H5O_t *open_oh,
-    unsigned type_id, const unsigned char *buf);
+    unsigned type_id, size_t buf_size, const unsigned char *buf);
 H5_DLL herr_t H5O_msg_delete(H5F_t *f, hid_t dxpl_id, H5O_t *open_oh,
     unsigned type_id, void *mesg);
 H5_DLL int H5O_msg_get_chunkno(const H5O_loc_t *loc, unsigned type_id, hid_t dxpl_id);

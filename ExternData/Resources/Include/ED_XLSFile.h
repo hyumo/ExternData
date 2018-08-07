@@ -1,6 +1,6 @@
 /* ED_XLSFile.h - Excel XLS functions header
  *
- * Copyright (C) 2015-2017, tbeu
+ * Copyright (C) 2015-2018, tbeu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,10 @@
 
 void* ED_createXLS(const char* fileName, const char* encoding, int verbose);
 void ED_destroyXLS(void* _xls);
-double ED_getDoubleFromXLS(void* _xls, const char* cellAddress, const char* sheetName);
-const char* ED_getStringFromXLS(void* _xls, const char* cellAddress, const char* sheetName);
-int ED_getIntFromXLS(void* _xls, const char* cellAddress, const char* sheetName);
+double ED_getDoubleFromXLS(void* _xls, const char* cellAddress, const char* sheetName, int* exist);
+const char* ED_getStringFromXLS(void* _xls, const char* cellAddress, const char* sheetName, int* exist);
+int ED_getIntFromXLS(void* _xls, const char* cellAddress, const char* sheetName, int* exist);
 void ED_getDoubleArray2DFromXLS(void* _xls, const char* cellAddress, const char* sheetName, double* a, size_t m, size_t n);
+void ED_getArray2DDimensionsFromXLS(void* _xls, const char* sheetName, int* m, int* n);
 
 #endif

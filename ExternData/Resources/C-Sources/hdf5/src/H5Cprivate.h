@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*-------------------------------------------------------------------------
@@ -162,7 +160,7 @@ typedef struct H5C_class_t {
 } H5C_class_t;
 
 
-/* Type defintions of call back functions used by the cache as a whole */
+/* Type definitions of call back functions used by the cache as a whole */
 
 typedef herr_t (*H5C_write_permitted_func_t)(const H5F_t *f,
                                              hid_t dxpl_id,
@@ -188,7 +186,7 @@ typedef herr_t (*H5C_log_flush_func_t)(H5C_t * cache_ptr,
 
 
 /* Default max cache size and min clean size are give here to make
- * them generally accessable.
+ * them generally accessible.
  */
 
 #define H5C__DEFAULT_MAX_CACHE_SIZE     ((size_t)(4 * 1024 * 1024))
@@ -371,7 +369,7 @@ typedef herr_t (*H5C_log_flush_func_t)(H5C_t * cache_ptr,
  * flush_immediately:  Boolean flag used only in Phdf5 -- and then only
  *		for H5AC_METADATA_WRITE_STRATEGY__DISTRIBUTED.
  *
- *		When a destributed metadata write is triggered at a
+ *		When a distributed metadata write is triggered at a
  *		sync point, this field is used to mark entries that
  *		must be flushed before leaving the sync point.  At all
  *		other times, this field should be set to FALSE.
@@ -676,7 +674,7 @@ typedef struct H5C_cache_entry_t
  *
  * flash_incr_mode:  Instance of the H5C_cache_flash_incr_mode enumerated
  *      type whose value indicates whether and by what algorithm we should
- *      make flash increases in the size of the cache to accomodate insertion
+ *      make flash increases in the size of the cache to accommodate insertion
  *      of large entries and large increases in the size of a single entry.
  *
  *      The addition of the flash increment mode was occasioned by performance

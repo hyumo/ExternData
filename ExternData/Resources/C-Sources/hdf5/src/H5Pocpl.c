@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*-------------------------------------------------------------------------
@@ -808,16 +806,6 @@ H5P__set_filter(H5P_genplist_t *plist, H5Z_filter_t filter, unsigned int flags,
     /* Check if filter is already available */
     if((filter_avail = H5Z_filter_avail(filter)) < 0)
         HGOTO_ERROR(H5E_PLIST, H5E_CANTGET, FAIL, "can't check filter availability")
-
-    /* If filter is not available, try to dynamically load it */
-    if(!filter_avail) {
-        const H5Z_class2_t *filter_info;
-
-        if(NULL == (filter_info = (const H5Z_class2_t *)H5PL_load(H5PL_TYPE_FILTER, (int)filter)))
-            HGOTO_ERROR(H5E_PLINE, H5E_CANTLOAD, FAIL, "failed to load dynamically loaded plugin")
-        if(H5Z_register(filter_info) < 0)
-	    HGOTO_ERROR(H5E_PLINE, H5E_CANTINIT, FAIL, "unable to register dynamic filter")
-    } /* end if */
 
     /* Get the pipeline property to append to */
     if(H5P_get(plist, H5O_CRT_PIPELINE_NAME, &pline) < 0)

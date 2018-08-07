@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #ifndef H5O_PACKAGE
@@ -31,7 +29,7 @@
 #define H5O_NMESGS	8 		/*initial number of messages	     */
 #define H5O_NCHUNKS	2		/*initial number of chunks	     */
 #define H5O_MIN_SIZE	22		/* Min. obj header data size (must be big enough for a message prefix and a continuation message) */
-#define H5O_MSG_TYPES   24              /* # of types of messages            */
+#define H5O_MSG_TYPES   25              /* # of types of messages            */
 #define H5O_MAX_CRT_ORDER_IDX 65535     /* Max. creation order index value   */
 
 /* Versions of object header structure */
@@ -188,7 +186,7 @@
                                                                               \
         /* Decode the message */                                              \
         HDassert(msg_type->decode);                                           \
-        if(NULL == ((MSG)->native = (msg_type->decode)((F), (DXPL), (OH), (MSG)->flags, &ioflags, (MSG)->raw))) \
+        if(NULL == ((MSG)->native = (msg_type->decode)((F), (DXPL), (OH), (MSG)->flags, &ioflags, (MSG)->raw_size, (MSG)->raw))) \
             HGOTO_ERROR(H5E_OHDR, H5E_CANTDECODE, ERR, "unable to decode message") \
                                                                               \
         /* Mark the message dirty if it was changed by decoding */            \
@@ -224,7 +222,7 @@ struct H5O_msg_class_t {
     const char	*name;				/*for debugging             */
     size_t	native_size;			/*size of native message    */
     unsigned    share_flags;			/* Message sharing settings */
-    void	*(*decode)(H5F_t *, hid_t, H5O_t *, unsigned, unsigned *, const uint8_t *);
+    void	*(*decode)(H5F_t *, hid_t, H5O_t *, unsigned, unsigned *, size_t, const uint8_t *);
     herr_t	(*encode)(H5F_t *, hbool_t, uint8_t *, const void *);
     void	*(*copy)(const void *, void *);	/*copy native value         */
     size_t	(*raw_size)(const H5F_t *, hbool_t, const void *);/*sizeof encoded message	*/
@@ -441,11 +439,13 @@ H5_DLLVAR const H5O_msg_class_t H5O_MSG_EFL[1];
 H5_DLLVAR const H5O_msg_class_t H5O_MSG_LAYOUT[1];
 
 #ifdef H5O_ENABLE_BOGUS
-/* "Bogus" Message. (0x0009) */
+/* "Bogus valid" Message. (0x0009) */
+/* "Bogus invalid" Message. (0x00018) */
 /*
  * Used for debugging - should never be found in valid HDF5 file.
  */
-H5_DLLVAR const H5O_msg_class_t H5O_MSG_BOGUS[1];
+H5_DLLVAR const H5O_msg_class_t H5O_MSG_BOGUS_VALID[1];
+H5_DLLVAR const H5O_msg_class_t H5O_MSG_BOGUS_INVALID[1];
 #endif /* H5O_ENABLE_BOGUS */
 
 /* Group Information Message. (0x000a) */

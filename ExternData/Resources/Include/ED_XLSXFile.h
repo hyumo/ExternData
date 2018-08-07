@@ -1,6 +1,6 @@
 /* ED_XLSXFile.h - Excel XLSX functions header
  *
- * Copyright (C) 2015-2017, tbeu
+ * Copyright (C) 2015-2018, tbeu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,10 @@
 
 void* ED_createXLSX(const char* fileName, int verbose);
 void ED_destroyXLSX(void* _xlsx);
-double ED_getDoubleFromXLSX(void* _xlsx, const char* cellAddress, const char* sheetName);
-const char* ED_getStringFromXLSX(void* _xlsx, const char* cellAddress, const char* sheetName);
-int ED_getIntFromXLSX(void* _xlsx, const char* cellAddress, const char* sheetName);
+double ED_getDoubleFromXLSX(void* _xlsx, const char* cellAddress, const char* sheetName, int* exist);
+const char* ED_getStringFromXLSX(void* _xlsx, const char* cellAddress, const char* sheetName, int* exist);
+int ED_getIntFromXLSX(void* _xlsx, const char* cellAddress, const char* sheetName, int* exist);
 void ED_getDoubleArray2DFromXLSX(void* _xlsx, const char* cellAddress, const char* sheetName, double* a, size_t m, size_t n);
+void ED_getArray2DDimensionsFromXLSX(void* _xlsx, const char* sheetName, int* m, int* n);
 
 #endif

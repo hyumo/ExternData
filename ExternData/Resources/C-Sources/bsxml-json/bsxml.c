@@ -38,7 +38,7 @@
 #define ENC_TYPE_UTF8   "UTF-8"
 
 #define isNullorEmpty(str) \
-    (str == NULL || strlen(str) == 0)
+    (str == NULL || str[0] == '\0')
 
 #define isAlpha(c) \
     ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
@@ -151,7 +151,7 @@ void XmlNode_print(struct XmlNode *root)
         XmlNode_print(node);
     }
 
-    printf("Node %s content:%s", root->m_tag , root->m_content != NULL ? root->m_content : NULL);
+    printf("Node %s content:%s", root->m_tag, root->m_content != NULL ? root->m_content : NULL);
 }
 
 int XmlNode_isTag(struct XmlNode *node, const String tag )
@@ -304,7 +304,7 @@ int XmlNode_getSubNodeValue(struct XmlNode *node, const String tag, String *valu
 {
     XmlNodeRef child = XmlNode_findChild(node, tag );
     if (child) {
-        XmlNode_getValue(child , value );
+        XmlNode_getValue(child, value );
         return XML_OK;
     }
     return XML_NOK;
@@ -367,7 +367,7 @@ static UT_string *XmlNode_getXML_UT(struct XmlNode *node)
     utstring_new(buff);
     if (buff == NULL) return NULL;
     if (node->m_attributes->num == 0) {
-        utstring_printf(buff, "<%s>\n", node->m_tag);
+        utstring_printf(buff, "<%s>", node->m_tag);
     } else {
         utstring_printf(buff, "<%s ",node->m_tag);
         // Put attributes.
@@ -380,7 +380,11 @@ static UT_string *XmlNode_getXML_UT(struct XmlNode *node)
             utstring_printf(buff, "/>\n");
             return buff;
         }
-        utstring_printf(buff, ">\n");
+        utstring_printf(buff, ">");
+    }
+
+    if (node->m_childs->num) {
+        utstring_printf(buff, "\n");
     }
 
     if (!isNullorEmpty(node->m_content)) {
@@ -408,7 +412,6 @@ static UT_string *XmlNode_getXML_UT(struct XmlNode *node)
                 break;
             }
         }
-        utstring_printf(buff,"\n");
     }
 
     for (i = 0; i < node->m_childs->num; i++) {
@@ -438,7 +441,7 @@ void XmlNode_toFile(struct XmlNode *node, const char *fileName)
         UT_string *buff = XmlNode_getXML_UT(node);
         if (buff != NULL) {
             if (utstring_body(buff) != NULL) {
-                fprintf(f, "<?xml version=\"1.0\" encoding=\"%s\"?>", ENC_TYPE_UTF8);
+                fprintf(f, "<?xml version=\"1.0\" encoding=\"%s\"?>\n", ENC_TYPE_UTF8);
                 fwrite(utstring_body(buff), sizeof(char), utstring_len(buff), f);
             }
             utstring_free(buff);
@@ -464,7 +467,7 @@ static void startElement(void *userData, const char *name, const char **atts)
     }
 
     if (parent) {
-        node = XmlNode_createChild(parent, (const String)name , NULL);
+        node = XmlNode_createChild(parent, (const String)name, NULL);
     } else {
         node = parser->m_root;
     }

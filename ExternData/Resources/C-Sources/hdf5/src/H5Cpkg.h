@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -1007,7 +1005,7 @@ struct H5C_t
  * We maintain doubly linked lists of instances of H5C_cache_entry_t for a
  * variety of reasons -- protected list, LRU list, and the clean and dirty
  * LRU lists at present.  The following macros support linking and unlinking
- * of instances of H5C_cache_entry_t by both their regular and auxilary next
+ * of instances of H5C_cache_entry_t by both their regular and auxiliary next
  * and previous pointers.
  *
  * The size and length fields are also maintained.
@@ -2511,7 +2509,7 @@ if ( (cache_ptr)->index_size !=                                             \
  *		a bit more performance out of the cache.
  *
  *		At least for the first cut, I am leaving the comments and
- *		white space in the macro.  If they cause dificulties with
+ *		white space in the macro.  If they cause difficulties with
  *		the pre-processor, I'll have to remove them.
  *
  *		JRM - 7/28/04
@@ -2622,7 +2620,7 @@ if ( (cache_ptr)->index_size !=                                             \
  *		a bit more performance out of the cache.
  *
  *		At least for the first cut, I am leaving the comments and
- *		white space in the macro.  If they cause dificulties with
+ *		white space in the macro.  If they cause difficulties with
  *		pre-processor, I'll have to remove them.
  *
  *		JRM - 7/28/04
@@ -2766,7 +2764,7 @@ if ( (cache_ptr)->index_size !=                                             \
  *		a bit more performance out of the cache.
  *
  *		At least for the first cut, I am leaving the comments and
- *		white space in the macro.  If they cause dificulties with
+ *		white space in the macro.  If they cause difficulties with
  *		pre-processor, I'll have to remove them.
  *
  *		JRM - 7/28/04
@@ -2904,7 +2902,7 @@ if ( (cache_ptr)->index_size !=                                             \
  *		a bit more performance out of the cache.
  *
  *		At least for the first cut, I am leaving the comments and
- *		white space in the macro.  If they cause dificulties with
+ *		white space in the macro.  If they cause difficulties with
  *		pre-processor, I'll have to remove them.
  *
  *		JRM - 7/28/04
@@ -3445,7 +3443,7 @@ if ( (cache_ptr)->index_size !=                                             \
  *		squeeze a bit more performance out of the cache.
  *
  *		At least for the first cut, I am leaving the comments and
- *		white space in the macro.  If they cause dificulties with
+ *		white space in the macro.  If they cause difficulties with
  *		pre-processor, I'll have to remove them.
  *
  *		JRM - 7/28/04

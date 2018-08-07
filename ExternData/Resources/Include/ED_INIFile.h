@@ -1,6 +1,6 @@
 /* ED_INIFile.h - INI functions header
  *
- * Copyright (C) 2015-2017, tbeu
+ * Copyright (C) 2015-2018, tbeu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
 
 void* ED_createINI(const char* fileName, int verbose);
 void ED_destroyINI(void* _ini);
-double ED_getDoubleFromINI(void* _ini, const char* varName, const char* section);
-const char* ED_getStringFromINI(void* _ini, const char* varName, const char* section);
-int ED_getIntFromINI(void* _ini, const char* varName, const char* section);
+double ED_getDoubleFromINI(void* _ini, const char* varName, const char* section, int strict, int* exist);
+const char* ED_getStringFromINI(void* _ini, const char* varName, const char* section, int* exist);
+int ED_getIntFromINI(void* _ini, const char* varName, const char* section, int strict, int* exist);
 
 #endif

@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*-------------------------------------------------------------------------
@@ -5260,7 +5258,7 @@ H5C_unprotect(H5F_t *		  f,
          *
          * All this is a bit awkward, but until the metadata cache entries
          * are contiguous, with only one dirty flag, we have to let the supplied
-         * functions deal with the reseting the is_dirty flag.
+         * functions deal with the resetting the is_dirty flag.
          */
         if ( entry_ptr->clear_on_unprotect ) {
 
@@ -6914,7 +6912,7 @@ H5C__flash_increase_cache_size(H5C_t * cache_ptr,
         if ( (cache_ptr->resize_ctl).rpt_fcn != NULL ) {
 
             /* get the hit rate for the reporting function.  Should still
-             * be good as we havent reset the hit rate statistics.
+             * be good as we haven't reset the hit rate statistics.
              */
             if ( H5C_get_cache_hit_rate(cache_ptr, &hit_rate) != SUCCEED ) {
 
@@ -7034,7 +7032,7 @@ H5C_flush_invalidate_cache(H5F_t * f,
         }
     }
 
-    /* The flush proceedure here is a bit strange.
+    /* The flush procedure here is a bit strange.
      *
      * In the outer while loop we make at least one pass through the
      * cache, and then repeat until either all the pinned entries
@@ -7212,7 +7210,7 @@ H5C_flush_invalidate_cache(H5F_t * f,
              *
              * While this optimization used to be easy, with the possibility
              * of new entries being added to the slist in the midst of the
-             * flush, we must keep the slist in cannonical form at all
+             * flush, we must keep the slist in canonical form at all
              * times.
              */
 
@@ -7785,7 +7783,7 @@ H5C_flush_single_entry(H5F_t *	   	   f,
 		if ( cache_ptr->aux_ptr != NULL ) {
 
                     HGOTO_ERROR(H5E_CACHE, H5E_SYSTEM, FAIL, \
-		        "resize/move in serialize occured in parallel case.")
+		        "resize/move in serialize occurred in parallel case.")
 
 		}
 	    }

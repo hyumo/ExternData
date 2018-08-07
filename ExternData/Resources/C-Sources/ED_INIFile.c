@@ -1,6 +1,6 @@
 /* ED_INIFile.c - INI functions
  *
- * Copyright (C) 2015-2017, tbeu
+ * Copyright (C) 2015-2018, tbeu
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,9 @@
 #define strdup _strdup
 #endif
 #include "ED_locale.h"
+#include "ED_ptrtrack.h"
 #include "array.h"
-#define INI_BUFFERSIZE 1024
-#include "minIni.h"
+#include "ini.h"
 #include "ModelicaUtilities.h"
 #include "../Include/ED_INIFile.h"
 
@@ -79,8 +79,8 @@ static INIPair* findKey(INISection* section, const char* key)
 	return ret;
 }
 
-/* Callback function for ini_browse */
-static int fillValues(const char *section, const char *key, const char *value, const void *userdata)
+/* Callback function for ini_parse */
+static int fillValues(void* userdata, const char* section, const char* key, const char* value)
 {
 	INIFile* ini = (INIFile*)userdata;
 	if (ini != NULL) {
@@ -101,6 +101,7 @@ static int fillValues(const char *section, const char *key, const char *value, c
 
 void* ED_createINI(const char* fileName, int verbose)
 {
+	int ret;
 	INIFile* ini = (INIFile*)malloc(sizeof(INIFile));
 	if (ini == NULL) {
 		ModelicaError("Memory allocation error\n");
@@ -120,7 +121,8 @@ void* ED_createINI(const char* fileName, int verbose)
 		ModelicaFormatMessage("... loading \"%s\"\n", fileName);
 	}
 
-	if (1 != ini_browse(fillValues, ini, fileName)) {
+	ret = ini_parse(fileName, fillValues, ini);
+	if (0 != ret) {
 		cpo_array_destroy(ini->sections);
 		free(ini->fileName);
 		free(ini);
@@ -128,12 +130,14 @@ void* ED_createINI(const char* fileName, int verbose)
 		return NULL;
 	}
 	ini->loc = ED_INIT_LOCALE;
+	ED_PTR_ADD(ini);
 	return ini;
 }
 
 void ED_destroyINI(void* _ini)
 {
 	INIFile* ini = (INIFile*)_ini;
+	ED_PTR_CHECK(ini);
 	if (ini != NULL) {
 		if (ini->fileName != NULL) {
 			free(ini->fileName);
@@ -157,102 +161,145 @@ void ED_destroyINI(void* _ini)
 			cpo_array_destroy(ini->sections);
 		}
 		free(ini);
+		ED_PTR_DEL(ini);
 	}
 }
 
-double ED_getDoubleFromINI(void* _ini, const char* varName, const char* section)
+double ED_getDoubleFromINI(void* _ini, const char* varName, const char* section, int strict, int* exist)
 {
 	double ret = 0.;
 	INIFile* ini = (INIFile*)_ini;
+	ED_PTR_CHECK(ini);
 	if (ini != NULL) {
 		INISection* _section = findSection(ini, section);
 		if (_section != NULL) {
 			INIPair* pair = findKey(_section, varName);
+			*exist = 1;
 			if (pair != NULL) {
-				if (ED_strtod(pair->value, ini->loc, &ret)) {
-					ModelicaFormatError("Cannot read double value \"%s\" from file \"%s\"\n",
-						pair->value, ini->fileName);
+				if (NULL != pair->value) {
+					if (ED_strtod(pair->value, ini->loc, &ret, strict)) {
+						ModelicaFormatError("Cannot read double value \"%s\" from file \"%s\"\n",
+							pair->value, ini->fileName);
+					}
+				}
+				else {
+					ModelicaFormatError("Cannot read value for key \"%s\" from file \"%s\"\n",
+						varName, ini->fileName);
+					*exist = 0;
 				}
 			}
 			else {
-				ModelicaFormatError("Cannot read key \"%s\" from file \"%s\"\n",
+				ModelicaFormatMessage("Cannot read key \"%s\" from file \"%s\"\n",
 					varName, ini->fileName);
+				*exist = 0;
 			}
 		}
 		else {
 			if (strlen(section) > 0) {
-				ModelicaFormatError("Cannot read section \"%s\" from file \"%s\"\n",
+				ModelicaFormatMessage("Cannot read section \"%s\" from file \"%s\"\n",
 					section, ini->fileName);
 			}
 			else {
-				ModelicaFormatError("Cannot read empty section from file \"%s\"\n",
+				ModelicaFormatMessage("Cannot read empty section from file \"%s\"\n",
 					ini->fileName);
 			}
+			*exist = 0;
 		}
+	}
+	else {
+		*exist = 0;
 	}
 	return ret;
 }
 
-const char* ED_getStringFromINI(void* _ini, const char* varName, const char* section)
+const char* ED_getStringFromINI(void* _ini, const char* varName, const char* section, int* exist)
 {
 	INIFile* ini = (INIFile*)_ini;
+	ED_PTR_CHECK(ini);
 	if (ini != NULL) {
 		INISection* _section = findSection(ini, section);
 		if (_section != NULL) {
 			INIPair* pair = findKey(_section, varName);
+			*exist = 1;
 			if (pair != NULL) {
-				char* ret = ModelicaAllocateString(strlen(pair->value));
-				strcpy(ret, pair->value);
-				return (const char*)ret;
+				if (NULL != pair->value) {
+					char* ret = ModelicaAllocateString(strlen(pair->value));
+					strcpy(ret, pair->value);
+					return (const char*)ret;
+				}
+				else {
+					ModelicaFormatError("Cannot read value for key \"%s\" from file \"%s\"\n",
+						varName, ini->fileName);
+					*exist = 0;
+				}
 			}
 			else {
-				ModelicaFormatError("Cannot read key \"%s\" from file \"%s\"\n",
+				ModelicaFormatMessage("Cannot read key \"%s\" from file \"%s\"\n",
 					varName, ini->fileName);
+				*exist = 0;
 			}
 		}
 		else {
 			if (strlen(section) > 0) {
-				ModelicaFormatError("Cannot read section \"%s\" from file \"%s\"\n",
+				ModelicaFormatMessage("Cannot read section \"%s\" from file \"%s\"\n",
 					section, ini->fileName);
 			}
 			else {
-				ModelicaFormatError("Cannot read empty section from file \"%s\"\n",
+				ModelicaFormatMessage("Cannot read empty section from file \"%s\"\n",
 					ini->fileName);
 			}
+			*exist = 0;
 		}
+	}
+	else {
+		*exist = 0;
 	}
 	return "";
 }
 
-int ED_getIntFromINI(void* _ini, const char* varName, const char* section)
+int ED_getIntFromINI(void* _ini, const char* varName, const char* section, int strict, int* exist)
 {
 	long ret = 0;
 	INIFile* ini = (INIFile*)_ini;
+	ED_PTR_CHECK(ini);
 	if (ini != NULL) {
 		INISection* _section = findSection(ini, section);
 		if (_section != NULL) {
 			INIPair* pair = findKey(_section, varName);
+			*exist = 1;
 			if (pair != NULL) {
-				if (ED_strtol(pair->value, ini->loc, &ret)) {
-					ModelicaFormatError("Cannot read int value \"%s\" from file \"%s\"\n",
-						pair->value, ini->fileName);
+				if (NULL != pair->value) {
+					if (ED_strtol(pair->value, ini->loc, &ret, strict)) {
+						ModelicaFormatError("Cannot read int value \"%s\" from file \"%s\"\n",
+							pair->value, ini->fileName);
+					}
+				}
+				else {
+					ModelicaFormatError("Cannot read value for key \"%s\" from file \"%s\"\n",
+						varName, ini->fileName);
+					*exist = 0;
 				}
 			}
 			else {
-				ModelicaFormatError("Cannot read key \"%s\" from file \"%s\"\n",
+				ModelicaFormatMessage("Cannot read key \"%s\" from file \"%s\"\n",
 					varName, ini->fileName);
+				*exist = 0;
 			}
 		}
 		else {
 			if (strlen(section) > 0) {
-				ModelicaFormatError("Cannot read section \"%s\" from file \"%s\"\n",
+				ModelicaFormatMessage("Cannot read section \"%s\" from file \"%s\"\n",
 					section, ini->fileName);
 			}
 			else {
-				ModelicaFormatError("Cannot read empty section from file \"%s\"\n",
+				ModelicaFormatMessage("Cannot read empty section from file \"%s\"\n",
 					ini->fileName);
 			}
+			*exist = 0;
 		}
+	}
+	else {
+		*exist = 0;
 	}
 	return (int)ret;
 }

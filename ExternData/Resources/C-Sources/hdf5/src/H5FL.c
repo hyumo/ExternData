@@ -5,12 +5,10 @@
  *                                                                           *
  * This file is part of HDF5.  The full HDF5 copyright notice, including     *
  * terms governing use, modification, and redistribution, is contained in    *
- * the files COPYING and Copyright.html.  COPYING can be found at the root   *
- * of the source code distribution tree; Copyright.html can be found at the  *
- * root level of an installed copy of the electronic HDF5 document set and   *
- * is linked from the top-level documents page.  It can also be found at     *
- * http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have          *
- * access to either file, you may request a copy from help@hdfgroup.org.     *
+ * the COPYING file, which can be found at the root of the source code       *
+ * distribution tree, or in https://support.hdfgroup.org/ftp/HDF5/releases.  *
+ * If you do not have access to either file, you may request a copy from     *
+ * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /*
@@ -20,7 +18,7 @@
  * Purpose: Manage priority queues of free-lists (of blocks of bytes).
  *      These are used in various places in the library which allocate and
  *      free differently blocks of bytes repeatedly.  Usually the same size
- *      of block is allocated and freed repeatly in a loop, while writing out
+ *      of block is allocated and freed repeatedly in a loop, while writing out
  *      chunked data for example, but the blocks may also be of different sizes
  *      from different datasets and an attempt is made to optimize access to
  *      the proper free list of blocks by using these priority queues to
@@ -457,7 +455,7 @@ H5FL_reg_calloc(H5FL_reg_head_t *head H5FL_TRACK_PARAMS)
         HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed")
 
     /* Clear to zeros */
-    /* (Accomodate tracking information, if present) */
+    /* (Accommodate tracking information, if present) */
     HDmemset(ret_value,0,head->size - H5FL_TRACK_SIZE);
 
 done:
@@ -2192,7 +2190,7 @@ H5FL_fac_calloc(H5FL_fac_head_t *head H5FL_TRACK_PARAMS)
         HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed")
 
     /* Clear to zeros */
-    /* (Accomodate tracking information, if present) */
+    /* (Accommodate tracking information, if present) */
     HDmemset(ret_value,0,head->size - H5FL_TRACK_SIZE);
 
 done:
